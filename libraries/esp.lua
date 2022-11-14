@@ -415,7 +415,7 @@ function library:Load(renderPriority)
                     cache.healthbarOutline.Size = healthbarSize + vector2New(2, 2);
                     cache.healthbarOutline.Position = healthbarPosition - vector2New(1, 1);
 
-                    cache.healthtext.Visible = onScreen and self.settings.distance;
+                    cache.healthtext.Visible = onScreen and self.settings.healthtext;
                     cache.healthtext.Text = mathFloor(health) .. " HP";
                     cache.healthtext.Color = self.settings.healthtextColor;
                     cache.healthtext.Position = healthbarPosition - vector2New(cache.healthtext.TextBounds.X + 2, -(height * (1 - (health / maxHealth))) + 2);
