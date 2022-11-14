@@ -350,7 +350,7 @@ function library:Load(renderPriority)
             local character, root = self._getCharacter(player);
             local enabled = self.settings.enabled;
 
-            if (self.settings.teamCheck and team ~= self._getTeam(localPlayer)) then
+            if (self.settings.teamCheck and team == self._getTeam(localPlayer)) then
                 enabled = false
             end
 
