@@ -329,7 +329,7 @@ function library._removeChams(character)
     end
 end
 
-function library:Load(renderPriority)
+function library:Load()
     for _, player in next, players:GetPlayers() do
         self._addEsp(player);
     end
@@ -342,9 +342,7 @@ function library:Load(renderPriority)
         self._removeEsp(player);
     end);
 
-    local priority = renderPriority or Enum.RenderPriority.Camera.Value + 1;
-
-    runService:BindToRenderStep("main_esp_rendering", priority, function()
+    self:AddConnection(runService.Heartbeat, function()
         for player, cache in next, self._espCache do
             local team = self._getTeam(player);
             local character, root = self._getCharacter(player);
@@ -382,6 +380,8 @@ function library:Load(renderPriority)
                     local position = vector2New(viewportSize.X * 0.5, viewportSize.Y * 0.5) + direction * self.settings.oofArrowsRadius;
 
                     cache.arrow.Visible = not onScreen and self.settings.oofArrows;
+                    cache.arrow.Color = self.settings.oofArrowsColor;
+                    cache.arrow.Transparency = self.settings.oofArrowsAlpha;
                     cache.arrow.PointA = roundVector(position);
                     cache.arrow.PointB = roundVector(position - rotateVector(direction, 30) * self.settings.oofArrowsSize);
                     cache.arrow.PointC = roundVector(position - rotateVector(direction, -30) * self.settings.oofArrowsSize);
@@ -396,6 +396,7 @@ function library:Load(renderPriority)
                     cache.team.Position = vector2New(x + width * 0.5 + cache.team.TextBounds.X * 0.5 + 2, boxPosition.Y - 2);
 
                     cache.box.Visible = onScreen and self.settings.boxes;
+                    cache.box.Color = self.settings.boxColor;
                     cache.box.Size = boxSize;
                     cache.box.Position = boxPosition;
 
@@ -441,15 +442,9 @@ function library:Load(renderPriority)
             end
         end
     end);
-
-    runService:BindToRenderStep("main_chams_rendering", priority + 1, function()
-    end);
 end
 
 function library:Unload()
-    runService:UnbindFromRenderStep("main_esp_rendering");
-    runService:UnbindFromRenderStep("main_chams_rendering");
-
     self._screenGui:Destroy();
 
     for index, connection in next, self._connections do
