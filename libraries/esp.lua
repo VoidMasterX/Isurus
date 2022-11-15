@@ -6,7 +6,7 @@ local game, workspace, table, math, cframe, vector2, vector3, color3, instance, 
 local getService, isA, findFirstChild, getChildren = game.GetService, game.IsA, game.FindFirstChild, game.GetChildren;
 local raycast = workspace.Raycast;
 local tableInsert = table.insert;
-local mathFloor, mathSin, mathCos, mathRad, mathTan, mathAtan2 = math.floor, math.sin, math.cos, math.rad, math.tan, math.atan2;
+local mathFloor, mathSin, mathCos, mathRad, mathTan, mathAtan2, mathClamp = math.floor, math.sin, math.cos, math.rad, math.tan, math.atan2, math.clamp;
 local cframeNew, vector2New, vector3New = cframe.new, vector2.new, vector3.new;
 local color3New = color3.new;
 local instanceNew, drawingNew = instance.new, drawing.new;
@@ -76,11 +76,13 @@ local library = {
     }),
     settings = {
         -- settings
-        enabled = false,
+        enabled = true,
         visibleOnly = false,
-        teamCheck = true,
+        teamCheck = false,
         boxStaticWidth = 4,
         boxStaticHeight = 5,
+        maxBoxWidth = 6,
+        maxBoxHeight = 6,
 
         -- options
         chams = false,
@@ -88,19 +90,19 @@ local library = {
         chamsInlineTransparency = 0.5,
         chamsOutlineColor = color3New(0.5, 0.7, 1),
         chamsOutlineTransparency = 0.7,
-        names = false,
+        names = true,
         nameColor = color3New(1, 1, 1),
         teams = false,
         teamColor = color3New(1, 1, 1),
         teamUseTeamColor = false,
-        boxes = false,
+        boxes = true,
         boxColor = color3New(1, 0, 0),
         boxType = "Static",
-        boxFill = false,
+        boxFill = true,
         boxFillColor = color3New(1, 0, 0),
         boxFillTransparency = 0.5,
-        healthbar = false,
-        healthbarColor = color3New(0, 1, 0),
+        healthbar = true,
+        healthbarColor = color3New(0, 1, 0.4),
         healthbarSize = 1,
         healthtext = false,
         healthtextColor = color3New(1, 1, 1),
@@ -149,7 +151,7 @@ function library._getHealth(player, character)
 end
 
 function library._getWeapon(player, character)
-    return "Hands"
+    return "Hands";
 end
 
 function library._visibleCheck(character, origin, target)
@@ -177,7 +179,7 @@ function library._getBoxSize(character)
     end
 
     local _, size = character:GetBoundingBox();
-    return size;
+    return vector2New(mathClamp(size.X, 0, library.settings.maxBoxWidth), mathClamp(size.Y, 0, library.settings.maxBoxHeight));
 end
 
 function library._getBoxData(character, depth)
@@ -231,7 +233,7 @@ function library._addEsp(player)
         healthbarOutline = create("Square", {
             Color = color3New(),
             Transparency = 0.5,
-            Thickness = 3,
+            Thickness = 1,
             Filled = true
         }),
         healthbar = create("Square", {
@@ -370,8 +372,9 @@ function library:Load()
                     local boxPosition = vector2New(mathFloor(x - width * 0.5), mathFloor(y - height * 0.5));
 
                     local health, maxHealth = self._getHealth(player, character);
-                    local healthbarSize = vector2New(self.settings.healthbarSize, height);
-                    local healthbarPosition = boxPosition - vector2New(healthbarSize.X + 3, 0);
+                    local barSize = self.settings.healthbarSize;
+                    local healthbarSize = vector2New(isSynV3 and barSize - 1 or barSize, height);
+                    local healthbarPosition = boxPosition - vector2New(healthbarSize.X + (isSynV3 and 4 or 3), 0);
 
                     local objectSpace = pointToObjectSpace(cameraCFrame, rootPosition);
                     local angle = mathAtan2(objectSpace.Z, objectSpace.X);
@@ -405,10 +408,13 @@ function library:Load()
                     cache.boxOutline.Position = boxPosition;
 
                     cache.boxFill.Visible = onScreen and self.settings.boxFill;
+                    cache.boxFill.Color = self.settings.boxFillColor;
+                    cache.boxFill.Transparency = self.settings.boxFillTransparency;
                     cache.boxFill.Size = boxSize;
                     cache.boxFill.Position = boxPosition;
 
                     cache.healthbar.Visible = onScreen and self.settings.healthbar;
+                    cache.healthbar.Color = self.settings.healthbarColor;
                     cache.healthbar.Size = vector2New(healthbarSize.X, -(height * (health / maxHealth)));
                     cache.healthbar.Position = healthbarPosition + vector2New(0, height);
 
@@ -427,7 +433,7 @@ function library:Load()
                     cache.distance.Position = vector2New(x, boxPosition.Y + height);
 
                     cache.weapon.Visible = onScreen and self.settings.weapon;
-                    cache.weapon.Text = library._getWeapon(player, character);
+                    cache.weapon.Text = self._getWeapon(player, character);
                     cache.weapon.Color = self.settings.weaponColor;
                     cache.weapon.Position = vector2New(x, boxPosition.Y + height + (cache.distance.Visible and cache.distance.TextBounds.Y + 1 or 0));
                 else
