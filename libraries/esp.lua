@@ -76,7 +76,6 @@ local library = {
         Parent = coreGui,
     }),
     settings = {
-        -- settings
         enabled = true,
         visibleOnly = false,
         teamCheck = false,
@@ -85,7 +84,6 @@ local library = {
         maxBoxWidth = 6,
         maxBoxHeight = 6,
 
-        -- options
         chams = false,
         chamsDepthMode = "AlwaysOnTop",
         chamsInlineColor = color3New(0.701960, 0.721568, 1),
@@ -135,7 +133,7 @@ end
 
 function library._getCharacter(player)
     local character = player.Character;
-    return character, character and findFirstChild(player.Character, "HumanoidRootPart");
+    return character, character and findFirstChild(character, "HumanoidRootPart");
 end
 
 function library._getHealth(player, character)
@@ -431,10 +429,17 @@ function library:Load()
 
     self:AddConnection(runService.Heartbeat, function()
         for player, highlight in next, self._chamsCache do
+            local team = self._getTeam(player);
             local character = self._getCharacter(player);
 
             if (character) then
-                highlight.Enabled = self.settings.chams;
+                local enabled = self.settings.chams;
+
+                if (self.settings.teamCheck and team == self._getTeam(localPlayer)) then
+                    enabled = false
+                end
+
+                highlight.Enabled = enabled;
                 highlight.Adornee = character;
                 highlight.DepthMode = depthMode[self.settings.chamsDepthMode];
                 highlight.FillColor = self.settings.chamsInlineColor;
