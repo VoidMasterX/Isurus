@@ -324,10 +324,13 @@ function library._removeChams(character)
     local chamsCache = library._chamsCache[character];
 
     if (chamsCache) then
-        for _, part in next, chamsCache do
-            part.inline:Destroy();
-            part.outline:Destroy();
+        for index, cache in next, chamsCache do
+            cache.inline:Destroy();
+            cache.outline:Destroy();
+            chamsCache[index] = nil;
         end
+
+        library._chamsCache[character] = nil;
     end
 end
 
