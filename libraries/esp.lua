@@ -442,7 +442,7 @@ function library:Load()
                 highlight.OutlineColor = self.settings.chamsOutlineColor;
                 highlight.OutlineTransparency = self.settings.chamsOutlineTransparency;
             else
-                character.Enabled = false;
+                highlight.Enabled = false;
             end
         end
     end);
