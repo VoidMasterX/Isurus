@@ -297,7 +297,7 @@ function library._addChams(character)
 
     for _, part in next, getChildren(character) do
         if (isA(part, "BasePart")) then
-            objects[part] = {
+            objects[part.Name] = {
                 inline = create("BoxHandleAdornment", {
                     Parent = library._screenGui,
                     Size = part.Size + vector3New(0.05, 0.05, 0.05),
