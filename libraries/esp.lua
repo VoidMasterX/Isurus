@@ -21,6 +21,7 @@ local runService = getService(game, "RunService");
 local localPlayer = players.LocalPlayer;
 local currentCamera = workspace.CurrentCamera;
 local filterType = Enum.RaycastFilterType.Blacklist;
+local depthMode = Enum.HighlightDepthMode;
 local lastScale, lastFov;
 
 -- function localization
@@ -86,10 +87,11 @@ local library = {
 
         -- options
         chams = false,
-        chamsInlineColor = color3New(0.5, 0.7, 1),
-        chamsInlineTransparency = 0.5,
-        chamsOutlineColor = color3New(0.5, 0.7, 1),
-        chamsOutlineTransparency = 0.7,
+        chamsDepthMode = "AlwaysOnTop",
+        chamsInlineColor = color3New(0.701960, 0.721568, 1),
+        chamsInlineTransparency = 0,
+        chamsOutlineColor = color3New(),
+        chamsOutlineTransparency = 0,
         names = true,
         nameColor = color3New(1, 1, 1),
         teams = false,
@@ -134,10 +136,6 @@ end
 function library._getCharacter(player)
     local character = player.Character;
     return character, character and findFirstChild(player.Character, "HumanoidRootPart");
-end
-
-function library._getPlayerFromCharacter(character)
-    return players:GetPlayerFromCharacter(character);
 end
 
 function library._getHealth(player, character)
@@ -286,65 +284,46 @@ function library._removeEsp(player)
     end
 end
 
-function library._addChams(character)
-    local player = library._getPlayerFromCharacter(character);
+function library._addChams(player)
+    local character = library._getCharacter(player);
 
     if (player == localPlayer) then
         return
     end
 
-    local objects = {};
-
-    for _, part in next, getChildren(character) do
-        if (isA(part, "BasePart")) then
-            objects[part.Name] = {
-                inline = create("BoxHandleAdornment", {
-                    Parent = library._screenGui,
-                    Size = part.Size + vector3New(0.05, 0.05, 0.05),
-                    Adornee = part,
-                    Color3 = library.settings.chamsInlineColor,
-                    Transparency = library.settings.chamsInlineTransparency,
-                    AlwaysOnTop = true
-                }),
-                outline = create("BoxHandleAdornment", {
-                    Parent = library._screenGui,
-                    Size = part.Size + vector3New(0.15, 0.15, 0.15),
-                    Adornee = part,
-                    Color3 = library.settings.chamsOutlineColor,
-                    Transparency = library.settings.chamsOutlineTransparency,
-                })
-            };
-        end
-    end
-
-    library._chamsCache[character] = objects;
+    library._chamsCache[player] = create("Highlight", {
+        Parent = library._screenGui,
+        Adornee = character,
+        FillColor = library.settings.chamsInlineColor,
+        FillTransparency = library.settings.chamsInlineTransparency,
+        OutlineColor = library.settings.chamsOutlineColor,
+        OutlineTransparency = library.settings.chamsOutlineTransparency,
+    });
 end
 
-function library._removeChams(character)
-    local chamsCache = library._chamsCache[character];
+function library._removeChams(player)
+    local chamsCache = library._chamsCache[player];
 
     if (chamsCache) then
-        for index, cache in next, chamsCache do
-            cache.inline:Destroy();
-            cache.outline:Destroy();
-            chamsCache[index] = nil;
-        end
-
-        library._chamsCache[character] = nil;
+        chamsCache:Destroy();
+        library._chamsCache[player] = nil;
     end
 end
 
 function library:Load()
     for _, player in next, players:GetPlayers() do
         self._addEsp(player);
+        self._addChams(player);
     end
 
     self:AddConnection(players.PlayerAdded, function(player)
         self._addEsp(player);
+        self._addChams(player);
     end);
 
     self:AddConnection(players.PlayerRemoving, function(player)
         self._removeEsp(player);
+        self._removeChams(player);
     end);
 
     self:AddConnection(runService.Heartbeat, function()
@@ -451,6 +430,17 @@ function library:Load()
             end
         end
     end);
+
+    self:AddConnection(runService.Heartbeat, function()
+        for player, highlight in next, self._espCache do
+            highlight.Enabled = self.settings.chams;
+            highlight.DepthMode = depthMode[self.settings.chamsDepthMode];
+            highlight.FillColor = self.settings.chamsInlineColor;
+            highlight.FillTransparency = self.settings.chamsInlineTransparency;
+            highlight.OutlineColor = self.settings.chamsOutlineColor;
+            highlight.OutlineTransparency = self.settings.chamsOutlineTransparency;
+        end
+    end);
 end
 
 function library:Unload()
@@ -463,14 +453,9 @@ function library:Unload()
 
     for _, player in next, players:GetPlayers() do
         self._removeEsp(player);
-    end
-
-    for _, cache in next, library._chamsCache do
-        for _, part in next, cache do
-            part.inline:Destroy();
-            part.outline:Destroy();
-        end
+        self._removeChams(player);
     end
 end
 
-return setmetatable({}, library);
+--return setmetatable({}, library);
+library:Load();
