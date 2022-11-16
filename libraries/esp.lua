@@ -430,7 +430,7 @@ function library:Load()
     end);
 
     self:AddConnection(runService.Heartbeat, function()
-        for player, highlight in next, self._espCache do
+        for player, highlight in next, self._chamsCache do
             local character = self._getCharacter(player);
 
             if (character) then
