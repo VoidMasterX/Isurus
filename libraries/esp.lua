@@ -285,15 +285,13 @@ function library._removeEsp(player)
 end
 
 function library._addChams(player)
-    local character = library._getCharacter(player);
-
     if (player == localPlayer) then
         return
     end
 
     library._chamsCache[player] = create("Highlight", {
         Parent = library._screenGui,
-        Adornee = character,
+        DepthMode = depthMode[library.settings.chamsDepthMode],
         FillColor = library.settings.chamsInlineColor,
         FillTransparency = library.settings.chamsInlineTransparency,
         OutlineColor = library.settings.chamsOutlineColor,
@@ -433,12 +431,19 @@ function library:Load()
 
     self:AddConnection(runService.Heartbeat, function()
         for player, highlight in next, self._espCache do
-            highlight.Enabled = self.settings.chams;
-            highlight.DepthMode = depthMode[self.settings.chamsDepthMode];
-            highlight.FillColor = self.settings.chamsInlineColor;
-            highlight.FillTransparency = self.settings.chamsInlineTransparency;
-            highlight.OutlineColor = self.settings.chamsOutlineColor;
-            highlight.OutlineTransparency = self.settings.chamsOutlineTransparency;
+            local character = self._getCharacter(player);
+
+            if (character) then
+                highlight.Enabled = self.settings.chams;
+                highlight.Adornee = character;
+                highlight.DepthMode = depthMode[self.settings.chamsDepthMode];
+                highlight.FillColor = self.settings.chamsInlineColor;
+                highlight.FillTransparency = self.settings.chamsInlineTransparency;
+                highlight.OutlineColor = self.settings.chamsOutlineColor;
+                highlight.OutlineTransparency = self.settings.chamsOutlineTransparency;
+            else
+                character.Enabled = false;
+            end
         end
     end);
 end
@@ -457,5 +462,4 @@ function library:Unload()
     end
 end
 
---return setmetatable({}, library);
-library:Load();
+return setmetatable({}, library);
