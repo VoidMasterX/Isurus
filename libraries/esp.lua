@@ -448,6 +448,7 @@ function library:Load()
                 highlight.OutlineTransparency = self.settings.chamsOutlineTransparency;
             else
                 highlight.Enabled = false;
+                highlight.Adornee = nil;
             end
         end
     end);
