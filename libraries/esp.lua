@@ -22,6 +22,7 @@ local localPlayer = players.LocalPlayer;
 local currentCamera = workspace.CurrentCamera;
 local filterType = Enum.RaycastFilterType.Blacklist;
 local depthMode = Enum.HighlightDepthMode;
+local pi = math.pi;
 local lastScale, lastFov;
 
 -- function localization
@@ -34,7 +35,7 @@ local function format(tbl, tblMerge, format)
     local formattedMerge = tblMerge;
 
     if (format) then
-        for index, value in next, tbl do
+        for index, value in tbl do
             if (typeof(index) == "string") then
                 formatted[index:lower()] = value;
             else
@@ -42,7 +43,7 @@ local function format(tbl, tblMerge, format)
             end
         end
 
-        for index, value in next, tblMerge do
+        for index, value in tblMerge do
             if (typeof(index) == "string") then
                 formattedMerge[index:lower()] = value;
             else
@@ -52,7 +53,7 @@ local function format(tbl, tblMerge, format)
     end
 
     if (tblMerge) then
-        for index, _ in next, formatted do
+        for index, _ in formatted do
             if (formattedMerge[index] ~= nil and typeof(formattedMerge[index]) == typeof(formatted[index])) then
                 formatted[index] = formattedMerge[index];
             end
@@ -82,7 +83,7 @@ local function create(type, properties)
     local object = drawing and drawingNew(type) or instanceNew(type);
 
     if (properties) then
-        for property, value in next, properties do
+        for property, value in properties do
             object[property] = value;
         end
     end
@@ -105,6 +106,7 @@ local library = {
     _initialized = false,
     _connections = {},
     _espCache = {},
+    _soundCache = {},
     _chamsCache = {},
     _objectCache = {},
     _screenGui = create("ScreenGui", {
@@ -125,6 +127,8 @@ local library = {
         chamsInlineTransparency = 0,
         chamsOutlineColor = color3New(),
         chamsOutlineTransparency = 0,
+        sound = false,
+        soundColor = color3New(1, 0, 0),
         names = false,
         nameColor = color3New(1, 1, 1),
         teams = false,
@@ -136,6 +140,8 @@ local library = {
         boxFill = false,
         boxFillColor = color3New(1, 0, 0),
         boxFillTransparency = 0.5,
+        skeletons = false,
+        skeletonColor = color3New(1, 1, 1),
         healthbar = false,
         healthbarColor = color3New(0, 1, 0.4),
         healthbarSize = 1,
@@ -296,6 +302,13 @@ function library._addEsp(player)
             OutlineColor = color3New(),
             Font = font
         }),
+        dot = create("Circle", {
+            Color = library.settings.soundColor,
+            Thickness = 1,
+            NumSides = 128,
+            Radius = 5,
+            Filled = true,
+        }),
         arrow = create("Triangle", {
             Color = library.settings.oofArrowsColor,
             Thickness = 1,
@@ -304,13 +317,14 @@ function library._addEsp(player)
     };
 
     library._espCache[player] = objects;
+    library._soundCache[player] = 0;
 end
 
 function library._removeEsp(player)
     local espCache = library._espCache[player];
 
     if (espCache) then
-        for index, object in next, espCache do
+        for index, object in espCache do
             object:Remove();
             espCache[index] = nil;
         end
@@ -404,12 +418,21 @@ function library._removeObject(object)
     local cache = library._objectCache[object];
 
     if (cache) then
-        for index, object in next, cache._objects do
+        for index, object in cache._objects do
             object:Remove();
             cache[index] = nil;
         end
 
         library._objectCache[object] = nil;
+    end
+end
+
+function library:SoundPulsate(player, magnitude)
+    for plr, cache in self._espCache do
+        if (player == plr) then
+            cache.dot.Radius = magnitude * pi;
+            self._soundCache[player] = 1;
+        end
     end
 end
 
@@ -445,9 +468,13 @@ function library:RemoveObject(object)
 end
 
 function library:Load()
+    if (self._initialized) then
+        return
+    end
+
     self._initialized = true;
 
-    for _, player in next, players:GetPlayers() do
+    for _, player in players:GetPlayers() do
         self._addEsp(player);
         self._addChams(player);
     end
@@ -467,7 +494,7 @@ function library:Load()
     end);
 
     self:AddConnection(runService.Heartbeat, function()
-        for object, cache in next, self._objectCache do
+        for object, cache in self._objectCache do
             local options, objects, root = cache._options, cache._objects, cache._root;
 
             local cameraCFrame = currentCamera.CFrame;
@@ -516,7 +543,7 @@ function library:Load()
                 objects.distance.Color = options.distanceColor;
                 objects.distance.Position = vector2New(x, boxPosition.Y + height);
             else
-                for _, object in next, objects do
+                for _, object in objects do
                     object.Visible = false;
                 end
             end
@@ -524,12 +551,12 @@ function library:Load()
     end);
 
     self:AddConnection(runService.Heartbeat, function()
-        for player, highlight in next, self._chamsCache do
+        for player, highlight in self._chamsCache do
             local team = self._getTeam(player);
             local character = self._getCharacter(player);
 
             if (character) then
-                local enabled = self.settings.chams;
+                local enabled = self.settings.enabled and self.settings.chams;
 
                 if (self.settings.teamCheck and team == self._getTeam(localPlayer)) then
                     enabled = false
@@ -549,8 +576,11 @@ function library:Load()
         end
     end);
 
-    self:AddConnection(runService.Heartbeat, function()
-        for player, cache in next, self._espCache do
+    self:AddConnection(runService.Heartbeat, function(deltaTime)
+        for player, cache in self._espCache do
+            print(self._soundCache[player]);
+            self._soundCache[player] = math.clamp(self._soundCache[player] - (deltaTime * 5), 0, 1);
+
             local team = self._getTeam(player);
             local character, root = self._getCharacter(player);
             local enabled = self.settings.enabled;
@@ -585,14 +615,20 @@ function library:Load()
                     local angle = mathAtan2(objectSpace.Z, objectSpace.X);
                     local direction = vector2New(mathCos(angle), mathSin(angle));
                     local viewportSize = currentCamera.ViewportSize;
-                    local position = vector2New(viewportSize.X * 0.5, viewportSize.Y * 0.5) + direction * self.settings.oofArrowsRadius;
+                    local screenCenter = vector2New(viewportSize.X * 0.5, viewportSize.Y * 0.5);
+                    local arrowPosition = screenCenter + direction * self.settings.oofArrowsRadius;
 
                     cache.arrow.Visible = not onScreen and self.settings.oofArrows;
                     cache.arrow.Color = self.settings.oofArrowsColor;
                     cache.arrow.Transparency = self.settings.oofArrowsAlpha;
-                    cache.arrow.PointA = roundVector(position);
-                    cache.arrow.PointB = roundVector(position - rotateVector(direction, 30) * self.settings.oofArrowsSize);
-                    cache.arrow.PointC = roundVector(position - rotateVector(direction, -30) * self.settings.oofArrowsSize);
+                    cache.arrow.PointA = roundVector(arrowPosition);
+                    cache.arrow.PointB = roundVector(arrowPosition - rotateVector(direction, 30) * self.settings.oofArrowsSize);
+                    cache.arrow.PointC = roundVector(arrowPosition - rotateVector(direction, -30) * self.settings.oofArrowsSize);
+
+                    cache.dot.Visible = not onScreen and self.settings.sound;
+                    cache.dot.Color = self.settings.soundColor;
+                    cache.dot.Transparency = self._soundCache[player];
+                    cache.dot.Position = roundVector(screenCenter + direction * 250);
 
                     cache.name.Visible = onScreen and self.settings.names;
                     cache.name.Color = self.settings.nameColor;
@@ -642,12 +678,12 @@ function library:Load()
                     cache.weapon.Color = self.settings.weaponColor;
                     cache.weapon.Position = vector2New(x, boxPosition.Y + height + (cache.distance.Visible and cache.distance.TextBounds.Y + 1 or 0));
                 else
-                    for _, object in next, cache do
+                    for _, object in cache do
                         object.Visible = false;
                     end
                 end
             else
-                for _, object in next, cache do
+                for _, object in cache do
                     object.Visible = false;
                 end
             end
@@ -656,20 +692,24 @@ function library:Load()
 end
 
 function library:Unload()
+    if (not self._initialized) then
+        return
+    end
+
     self._initialized = false;
     self._screenGui:Destroy();
 
-    for index, connection in next, self._connections do
+    for index, connection in self._connections do
         connection:Disconnect();
         self._connections[index] = nil;
     end
 
-    for _, player in next, players:GetPlayers() do
+    for _, player in players:GetPlayers() do
         self._removeEsp(player);
         self._removeChams(player);
     end
 
-    for object, _ in next, self._objectCache do
+    for object, _ in self._objectCache do
         self._removeObject(object);
     end
 end
