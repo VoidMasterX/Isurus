@@ -328,6 +328,9 @@ function library._removeEsp(player)
             object:Remove();
             espCache[index] = nil;
         end
+
+        library._espCache[player] = nil;
+        library._soundCache[player] = nil;
     end
 end
 
