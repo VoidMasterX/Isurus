@@ -118,8 +118,6 @@ local library = {
         Parent = coreGui,
     }),
     settings = {
-        _blacklistedParts = {},
-
         enabled = false,
         visibleOnly = false,
         teamCheck = false,
@@ -626,64 +624,100 @@ function library:Load()
                     local arrowPosition = screenCenter + direction * self.settings.oofArrowsRadius;
 
                     cache.arrow.Visible = not onScreen and self.settings.oofArrows;
-                    cache.arrow.Color = self.settings.oofArrowsColor;
-                    cache.arrow.Transparency = self.settings.oofArrowsAlpha;
-                    cache.arrow.PointA = roundVector(arrowPosition);
-                    cache.arrow.PointB = roundVector(arrowPosition - rotateVector(direction, 30) * self.settings.oofArrowsSize);
-                    cache.arrow.PointC = roundVector(arrowPosition - rotateVector(direction, -30) * self.settings.oofArrowsSize);
+
+                    if (cache.arrow.Visible) then
+                        cache.arrow.Color = self.settings.oofArrowsColor;
+                        cache.arrow.Transparency = self.settings.oofArrowsAlpha;
+                        cache.arrow.PointA = roundVector(arrowPosition);
+                        cache.arrow.PointB = roundVector(arrowPosition - rotateVector(direction, 30) * self.settings.oofArrowsSize);
+                        cache.arrow.PointC = roundVector(arrowPosition - rotateVector(direction, -30) * self.settings.oofArrowsSize);
+                    end
 
                     cache.dot.Visible = not onScreen and self.settings.sound;
-                    cache.dot.Color = self.settings.soundColor;
-                    cache.dot.Transparency = self._soundCache[player];
-                    cache.dot.Position = roundVector(screenCenter + direction * 250);
+
+                    if (cache.dot.Visible) then
+                        cache.dot.Color = self.settings.soundColor;
+                        cache.dot.Transparency = self._soundCache[player];
+                        cache.dot.Position = roundVector(screenCenter + direction * 250);
+                    end
 
                     cache.name.Visible = onScreen and self.settings.names;
-                    cache.name.Color = self.settings.nameColor;
-                    cache.name.Position = vector2New(x, boxPosition.Y - cache.name.TextBounds.Y - 2);
+
+                    if (cache.name.Visible) then
+                        cache.name.Color = self.settings.nameColor;
+                        cache.name.Position = vector2New(x, boxPosition.Y - cache.name.TextBounds.Y - 2);
+                    end
 
                     cache.team.Visible = onScreen and self.settings.teams;
-                    cache.team.Text = team ~= nil and team.Name or "No Team";
-                    cache.team.Color = (self.settings.teamUseTeamColor and team ~= nil) and team.TeamColor.Color or self.settings.teamColor;
-                    cache.team.Position = vector2New(x + width * 0.5 + cache.team.TextBounds.X * 0.5 + 2, boxPosition.Y - 2);
+
+                    if (cache.team.Visible) then
+                        cache.team.Text = team ~= nil and team.Name or "No Team";
+                        cache.team.Color = (self.settings.teamUseTeamColor and team ~= nil) and team.TeamColor.Color or self.settings.teamColor;
+                        cache.team.Position = vector2New(x + width * 0.5 + cache.team.TextBounds.X * 0.5 + 2, boxPosition.Y - 2);
+                    end
 
                     cache.box.Visible = onScreen and self.settings.boxes;
-                    cache.box.Color = self.settings.boxColor;
-                    cache.box.Size = boxSize;
-                    cache.box.Position = boxPosition;
+
+                    if (cache.box.Visible) then
+                        cache.box.Color = self.settings.boxColor;
+                        cache.box.Size = boxSize;
+                        cache.box.Position = boxPosition;
+                    end
 
                     cache.boxOutline.Visible = cache.box.Visible;
-                    cache.boxOutline.Size = boxSize;
-                    cache.boxOutline.Position = boxPosition;
+
+                    if (cache.boxOutline.Visible) then
+                        cache.boxOutline.Size = boxSize;
+                        cache.boxOutline.Position = boxPosition;
+                    end
 
                     cache.boxFill.Visible = onScreen and self.settings.boxFill;
-                    cache.boxFill.Color = self.settings.boxFillColor;
-                    cache.boxFill.Transparency = self.settings.boxFillTransparency;
-                    cache.boxFill.Size = boxSize;
-                    cache.boxFill.Position = boxPosition;
+
+                    if (cache.boxFill.Visible) then
+                        cache.boxFill.Color = self.settings.boxFillColor;
+                        cache.boxFill.Transparency = self.settings.boxFillTransparency;
+                        cache.boxFill.Size = boxSize;
+                        cache.boxFill.Position = boxPosition;
+                    end
 
                     cache.healthbar.Visible = onScreen and self.settings.healthbar;
-                    cache.healthbar.Color = self.settings.healthbarColor;
-                    cache.healthbar.Size = vector2New(healthbarSize.X, -(height * (health / maxHealth)));
-                    cache.healthbar.Position = healthbarPosition + vector2New(0, height);
+
+                    if (cache.healthbar.Visible) then
+                        cache.healthbar.Color = self.settings.healthbarColor;
+                        cache.healthbar.Size = vector2New(healthbarSize.X, -(height * (health / maxHealth)));
+                        cache.healthbar.Position = healthbarPosition + vector2New(0, height);
+                    end
 
                     cache.healthbarOutline.Visible = cache.healthbar.Visible;
-                    cache.healthbarOutline.Size = healthbarSize + vector2New(2, 2);
-                    cache.healthbarOutline.Position = healthbarPosition - vector2New(1, 1);
+
+                    if (cache.healthbarOutline.Visible) then
+                        cache.healthbarOutline.Size = healthbarSize + vector2New(2, 2);
+                        cache.healthbarOutline.Position = healthbarPosition - vector2New(1, 1);
+                    end
 
                     cache.healthtext.Visible = onScreen and self.settings.healthtext;
-                    cache.healthtext.Text = mathFloor(health) .. " HP";
-                    cache.healthtext.Color = self.settings.healthtextColor;
-                    cache.healthtext.Position = healthbarPosition - vector2New(cache.healthtext.TextBounds.X + 2, -(height * (1 - (health / maxHealth))) + 2);
+
+                    if (cache.healthtext.Visible) then
+                        cache.healthtext.Text = mathFloor(health) .. " HP";
+                        cache.healthtext.Color = self.settings.healthtextColor;
+                        cache.healthtext.Position = healthbarPosition - vector2New(cache.healthtext.TextBounds.X + 2, -(height * (1 - (health / maxHealth))) + 2);
+                    end
 
                     cache.distance.Visible = onScreen and self.settings.distance;
-                    cache.distance.Text = mathFloor((cameraPosition - rootPosition).Magnitude) .. " Studs";
-                    cache.distance.Color = self.settings.distanceColor;
-                    cache.distance.Position = vector2New(x, boxPosition.Y + height);
+
+                    if (cache.distance.Visible) then
+                        cache.distance.Text = mathFloor((cameraPosition - rootPosition).Magnitude) .. " Studs";
+                        cache.distance.Color = self.settings.distanceColor;
+                        cache.distance.Position = vector2New(x, boxPosition.Y + height);
+                    end
 
                     cache.weapon.Visible = onScreen and self.settings.weapon;
-                    cache.weapon.Text = self._getWeapon(player, character);
-                    cache.weapon.Color = self.settings.weaponColor;
-                    cache.weapon.Position = vector2New(x, boxPosition.Y + height + (cache.distance.Visible and cache.distance.TextBounds.Y + 1 or 0));
+
+                    if (cache.weapon.Visible) then
+                        cache.weapon.Text = self._getWeapon(player, character);
+                        cache.weapon.Color = self.settings.weaponColor;
+                        cache.weapon.Position = vector2New(x, boxPosition.Y + height + (cache.distance.Visible and cache.distance.TextBounds.Y + 1 or 0));
+                    end
                 else
                     for _, object in next, cache do
                         object.Visible = false;
