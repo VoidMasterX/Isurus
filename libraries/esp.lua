@@ -5,7 +5,7 @@ local isSynV3 = worldtoscreen ~= nil;
 local game, workspace, table, math, cframe, vector2, vector3, color3, instance, drawing, raycastParams = game, workspace, table, math, CFrame, Vector2, Vector3, Color3, Instance, Drawing, RaycastParams;
 local getService, isA, findFirstChild, getChildren = game.GetService, game.IsA, game.FindFirstChild, game.GetChildren;
 local raycast = workspace.Raycast;
-local tableInsert = table.insert;
+local tableInsert, tableFind = table.insert, table.find;
 local mathFloor, mathSin, mathCos, mathRad, mathTan, mathAtan2, mathClamp = math.floor, math.sin, math.cos, math.rad, math.tan, math.atan2, math.clamp;
 local cframeNew, vector2New, vector3New = cframe.new, vector2.new, vector3.new;
 local color3New = color3.new;
@@ -26,6 +26,11 @@ local pi = math.pi;
 local lastScale, lastFov;
 
 -- function localization
+local getBoundingBox; do
+    local model = instanceNew("Model");
+    getBoundingBox = model.GetBoundingBox;
+    model:Destroy();
+end
 local ccWorldToViewportPoint = currentCamera.WorldToViewportPoint;
 local pointToObjectSpace = cframeNew().PointToObjectSpace;
 
@@ -113,6 +118,8 @@ local library = {
         Parent = coreGui,
     }),
     settings = {
+        _blacklistedParts = {},
+
         enabled = false,
         visibleOnly = false,
         teamCheck = false,
@@ -140,8 +147,6 @@ local library = {
         boxFill = false,
         boxFillColor = color3New(1, 0, 0),
         boxFillTransparency = 0.5,
-        skeletons = false,
-        skeletonColor = color3New(1, 1, 1),
         healthbar = false,
         healthbarColor = color3New(0, 1, 0.4),
         healthbarSize = 1,
@@ -215,7 +220,7 @@ function library._getBoxSize(model)
         return vector2New(library.settings.boxStaticWidth, library.settings.boxStaticHeight);
     end
 
-    local _, size = model:GetBoundingBox();
+    local _, size = getBoundingBox(model);
     return vector2New(mathClamp(size.X, 0, library.settings.maxBoxWidth), mathClamp(size.Y, 0, library.settings.maxBoxHeight));
 end
 
@@ -431,11 +436,11 @@ function library._removeObject(object)
 end
 
 function library:SoundPulsate(player, magnitude)
-    for plr, cache in next, self._espCache do
-        if (player == plr) then
-            cache.dot.Radius = magnitude * pi;
-            self._soundCache[player] = 1;
-        end
+    local espCache = self._espCache[player];
+
+    if (espCache) then
+        espCache.dot.Radius = magnitude * pi;
+        self._soundCache[player] = 1;
     end
 end
 
@@ -514,7 +519,7 @@ function library:Load()
                 local rootPosition, onScreen, depth = worldToViewportPoint(rootPosition);
 
                 local x, y = rootPosition.X, rootPosition.Y;
-                local width, height = self._getBoxData(isA(object, "Model") and select(2, object:GetBoundingBox()) or object.Size, depth);
+                local width, height = self._getBoxData(object, depth);
                 local boxSize = vector2New(width, height);
                 local boxPosition = vector2New(mathFloor(x - width * 0.5), mathFloor(y - height * 0.5));
 
